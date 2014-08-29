@@ -1,5 +1,6 @@
 {
-	SqlServerName: "Dietrich",
-	SqlServerDatabase : "CATE_Maintenance"
-	
+	"configuration": {
+		"SqlServerName": ".\\SQLEXPRESS2012",
+		"SqlServerDatabase": "CATE_Maintenance"
+	}
 }

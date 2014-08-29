@@ -5,33 +5,35 @@ $currentExecutingPath = $fullPathIncFileName.Replace($currentScriptName, "")
 
 Function FindTableWithField($paramField)
 {
-$fileName = "config.json"
-$completeFileName = $currentExecutingPath + $fileName
-$configuration = (Get-Content $completeFileName) -join "`n" | ConvertFrom-Json
-#I set the data source
-$dataSource = $configuration.SqlServerName
-$database = $configuration.SqlServerDatabase
-$connectionString = “Server=$dataSource;Database=$database;Integrated Security=true;”
-$connection = New-Object System.Data.SqlClient.SqlConnection
-$connection.ConnectionString = $connectionString
 
-#Open the connection
-$connection.Open()
+    #Read Configuration
+    $json = [System.IO.File]::ReadAllText("$PSScriptRoot\config.json")
+    $config = ConvertFrom-Json $json
 
-#I define the query
-$query = “SELECT columns.name AS ColName, tables.name as TableName FROM sys.columns AS columns"
-$query += " INNER JOIN sys.tables AS tables ON columns.object_id = tables.object_id WHERE columns.name LIKE '%$paramField%'" 
+    $dataSource = $config.configuration.SqlServerName
+    $database = $config.configuration.SqlServerDatabase
+    $connectionString = “Server=$dataSource;Database=$database;Integrated Security=true;”
+    $connection = New-Object System.Data.SqlClient.SqlConnection
+    $connection.ConnectionString = $connectionString
 
-$command = $connection.CreateCommand()
-$command.CommandText = $query
 
-$result = $command.ExecuteReader()
+    #Open the connection
+    $connection.Open()
 
-#Load the result into a datatable
-$table = new-object “System.Data.DataTable”
-$table.Load($result)
+    #I define the query
+    $query = “SELECT columns.name AS ColName, tables.name as TableName FROM sys.columns AS columns"
+    $query += " INNER JOIN sys.tables AS tables ON columns.object_id = tables.object_id WHERE columns.name LIKE '%$paramField%'" 
 
-$table
-$connection.Close()
+    $command = $connection.CreateCommand()
+    $command.CommandText = $query
+
+    $result = $command.ExecuteReader()
+
+    #Load the result into a datatable
+    $table = new-object “System.Data.DataTable”
+    $table.Load($result)
+
+    $table
+    $connection.Close()
 }
 
