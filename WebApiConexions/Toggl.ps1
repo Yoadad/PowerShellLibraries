@@ -1,5 +1,13 @@
 $headerAuthorization = "Basic [base 64 token]"
 $logPath = "$PSScriptRoot\log.txt"
+
+function Get-UserData()
+{
+    $url = "https://www.toggl.com/api/v8/me"
+    $r = Invoke-RestMethod -URI $url -Method Get -ContentType $contentType -Headers @{"Authorization"= $headerAuthorization}
+    return $r
+}
+
 function Send-Entry($description,$date,$duration)
 {
     $url = "https://www.toggl.com/api/v8/time_entries"
@@ -9,9 +17,9 @@ function Send-Entry($description,$date,$duration)
     $r.data | Add-Content $logPath
 }
 
-function get-details($since,$until)
+function get-details($since,$until,$id)
 {
-    $url = "https://www.toggl.com/reports/api/v2/details?rounding=Off&status=active&user_ids=455398&name=&billable=both&calculate=time&sortDirection=asc&sortBy=date&page=1&project_ids=2304015&description=&since=$since&until=$until&grouping=&subgrouping=time_entries&order_field=date&order_desc=off&distinct_rates=Off&user_agent=Toggl+New+3.2.0&workspace_id=173552&bars_count=31&subgrouping_ids=true&bookmark_token="
+    $url = "https://www.toggl.com/reports/api/v2/details?rounding=Off&status=active&user_ids=$id&name=&billable=both&calculate=time&sortDirection=asc&sortBy=date&page=1&project_ids=2304015&description=&since=$since&until=$until&grouping=&subgrouping=time_entries&order_field=date&order_desc=off&distinct_rates=Off&user_agent=Toggl+New+3.2.0&workspace_id=173552&bars_count=31&subgrouping_ids=true&bookmark_token="
     $contentType = "application/json"
     $r = Invoke-RestMethod -URI $url -Method Get -ContentType $contentType -Headers @{"Authorization"= $headerAuthorization}
     return $r
@@ -32,7 +40,9 @@ function get-entries()
 
     $entries = @()
 
-    $details = get-details $schedule.since $schedule.until
+    $user = get-userdata
+
+    $details = get-details $schedule.since $schedule.until $user.data.id
 
     $currentdEntries = $details.data | Select-Object start
 

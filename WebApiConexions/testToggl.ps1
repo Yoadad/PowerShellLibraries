@@ -8,5 +8,4 @@ clear
 
 #3) Uncomment the next sentence and execute this script.
 
-#set-entries
-
+set-entries
