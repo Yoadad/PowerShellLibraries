@@ -36,4 +36,3 @@ Function FindTableWithField($paramField)
     $table
     $connection.Close()
 }
-

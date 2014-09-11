@@ -1,37 +1,79 @@
-
-Function SendEntry($url,$description,$year,$month,$day,$hour,$duration)
+$headerAuthorization = "Basic [base 64 token]"
+$logPath = "$PSScriptRoot\log.txt"
+function Send-Entry($description,$date,$duration)
 {
-    $headerAuthorization = "Basic [token 64 base]"
+    $url = "https://www.toggl.com/api/v8/time_entries"
     $contentType = "application/json"
-    $body = '{"time_entry":{"description":'+$description+',"tags":["billed"],"duration":'+$duration+',"start":"'+$year+'-'+$month+'-'+$day+'T'+$hour+':00-05:00","pid":2304015}}'
-
+    $body = '{"time_entry":{"description":"'+$description+'","tags":["billed"],"duration":'+$duration+',"start":"'+$date+'","pid":2304015}}'
     $r = Invoke-RestMethod -URI $url -Method Post -ContentType $contentType -Body $body -Headers @{"Authorization"= $headerAuthorization}
-    $r.data | Add-Content .\response.txt
+    $r.data | Add-Content $logPath
+}
+
+function get-details($since,$until)
+{
+    $url = "https://www.toggl.com/reports/api/v2/details?rounding=Off&status=active&user_ids=455398&name=&billable=both&calculate=time&sortDirection=asc&sortBy=date&page=1&project_ids=2304015&description=&since=$since&until=$until&grouping=&subgrouping=time_entries&order_field=date&order_desc=off&distinct_rates=Off&user_agent=Toggl+New+3.2.0&workspace_id=173552&bars_count=31&subgrouping_ids=true&bookmark_token="
+    $contentType = "application/json"
+    $r = Invoke-RestMethod -URI $url -Method Get -ContentType $contentType -Headers @{"Authorization"= $headerAuthorization}
+    return $r
 }
 
 
-
-clear
-
-$url = "https://www.toggl.com/api/v8/time_entries"
-                                                                                                        
-"" | Out-File .\response.txt
-
-#días del mes
-$days = 15,17,18,19
-
-#tareas
-$scrum = '"Daily SCRUM"'
-$ui = '"CAT (PetroSkills) Compass UI Globalization"'
-
-foreach($day in $days)
+function get-entries()
 {
-    $d = [System.String]::Format("{0:0#}",$day)
-    $m = '09'
-    $y = '2014'
-    
-    SendEntry $url $ui $y $m $d '08:00' '18000'
-    SendEntry $url $ui $y $m $d '14:00' '5400'
-    SendEntry $url $scrum $y $m $d '15:30' '900'
-    SendEntry $url $ui $y $m $d '08:00' '4500'
+
+    $schedulePath = "$PSSCRIPTROOT\schedule.json"
+    $schedule = (Get-Content $schedulePath) -join "`n" | ConvertFrom-Json
+
+    $startDate = get-date ($schedule.since + "T00:00-5:00")
+    $endDate = get-date ($schedule.until + "T23:59-5:00")
+
+    $ts = NEW-TIMESPAN –Start $StartDate –End $EndDate
+    $totalDays = [System.Math]::Ceiling($ts.TotalDays)
+
+    $entries = @()
+
+    $details = get-details $schedule.since $schedule.until
+
+    $currentdEntries = $details.data | Select-Object start
+
+    for($i=0;$i -lt $totalDays; $i++)
+    {
+        $date = $startDate.AddDays($i)
+        $isWeekendDay =  $date.DayOfWeek -eq [System.DayOfWeek]::Saturday -or $date.DayOfWeek -eq [System.DayOfWeek]::Sunday
+        $isSavingDay = $schedule.nonworkingdays -contains $date.Day
+
+        if(!$isWeekendDay -and !$isSavingDay)
+        {
+            foreach($item in $schedule.schedule)
+            {
+                
+                $iso = $date.ToString("yyyy-MM-dd") + "T" + $item.start + ":00-05:00"
+                $e = $currentdEntries.start -contains $iso.ToString()
+
+                if(!$e)
+                {
+                    $description = $schedule.tasks | where {$_.id -eq $item.taskid} | Select-Object -Index 0
+                    $entries += @{date=$iso;description=$description.description;duration=$item.duration}
+                }
+            }
+        }
+    }
+
+    return $entries
+}
+
+
+function set-entries()
+{
+    New-Item $logPath -type file -force
+
+    $entries = get-entries
+
+    $i = 0
+    foreach($item in $entries)
+    {
+        send-entry $item.description $item.date $item.duration
+        $i = $i + 1
+        echo $i
+    }
 }
