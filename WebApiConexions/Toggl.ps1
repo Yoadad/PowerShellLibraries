@@ -1,4 +1,4 @@
-$headerAuthorization = "Basic [base 64 token]"
+$headerAuthorization = "Basic [base 64 key]"
 $logPath = "$PSScriptRoot\log.txt"
 
 function Get-UserData()
@@ -12,7 +12,7 @@ function Send-Entry($description,$date,$duration)
 {
     $url = "https://www.toggl.com/api/v8/time_entries"
     $contentType = "application/json"
-    $body = '{"time_entry":{"description":"'+$description+'","tags":["billed"],"duration":'+$duration+',"start":"'+$date+'","pid":2304015}}'
+    $body = '{"time_entry":{"description":"'+$description+'","tags":["billed"],"duration":'+$duration+',"start":"'+$date+'","pid":2304015,"created_with":"powershell-script"}}'
     $r = Invoke-RestMethod -URI $url -Method Post -ContentType $contentType -Body $body -Headers @{"Authorization"= $headerAuthorization}
     $r.data | Add-Content $logPath
 }
