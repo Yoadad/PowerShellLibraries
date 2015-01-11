@@ -1,0 +1,21 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>{*}</title>
+		<link typ="text/css" rel="stylesheet" href="css/{*}.css"/>
+		<script type="text/javascript" src="js/angular.min.js"></script>
+		<script type="text/javascript" src="js/{*}.js"></script>
+	</head>
+	<body ng-app="{*}App" ng-controller="{*}Ctrl">
+		<div>
+			<h1>Menu</h1>
+			<img src="img/yelp.png"/>
+		<div>
+		<ul ng-repeat="item in items">
+			<li>
+			<b>{{item.name}}</b> <i>{{item.value|currency}}</i>
+			<img ng-src="{{item.img}}">
+			</li>
+		</ul>
+	</body>
+</html>
