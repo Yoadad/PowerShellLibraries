@@ -1,6 +1,9 @@
 {
 	"configuration": {
-		"SqlServerName": ".\\SQLEXPRESS2012",
-		"SqlServerDatabase": "CATE_Maintenance"
-	}
+		"SqlServerName": ".\\SQLEXPRESS",
+		"SqlServerDatabase": "mobiManageCustomDB"
+	},
+    "connectionString":"server=72.44.213.107;Persist Security Info=False;Initial Catalog=mobiManageCustomDB;User ID=MobiApiUser;Password=Mob!apiU$er"
+
+
 }
